@@ -8,3 +8,5 @@ To "fix" the issue, uncomment the code for `badItemsArray` and
 `goodItemsArray`. `MasterViewController.swift` lines: `30`, `31`, `34`, `35`,
 `96`, and `100`. Rebuild and launch the application, it should work as expected
 now.
+
+![Screenshot](http://cloud.butt.zone/fDNC/demo_screenshot.png)
