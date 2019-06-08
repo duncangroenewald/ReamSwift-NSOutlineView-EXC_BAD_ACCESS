@@ -19,12 +19,18 @@ class Group: Object {
     override static func primaryKey() -> String? {
         return "name"
     }
+    
+    /// Use this to filter the list that gets displayed - avoids the crash
     var activeItems: Results<Item> {
         return items.filter("isDeleted == false")
     }
+    
+    /// This still crashes if object is deleted by Realm
     var itemsArray: [Item] {
-        return Array(items.filter("isDeleted == false"))
+//        return Array(items.filter("isDeleted == false"))
+        return Array(items)
     }
+    
     func addItem(_ name: String)->Bool{
         do {
             realm!.beginWrite()
@@ -54,10 +60,13 @@ class Item: Object {
 extension Realm {
     var groups: Results<Group> {
         return objects(Group.self).filter("isDeleted == false").sorted(byKeyPath: "name")
+//        return objects(Group.self).sorted(byKeyPath: "name")
     }
     func removeGroup(_ group: Group) {
         do {
             try write {
+                
+//                delete(group)
                 group.isDeleted = true
             }
         } catch {
@@ -95,6 +104,7 @@ extension Realm {
         do {
             try write {
                 item.isDeleted = true
+//                delete(item)
             }
         } catch {
             print("Delete Item action failed: \(error)")
