@@ -27,7 +27,6 @@ class Group: Object {
     
     /// This still crashes if object is deleted by Realm
     var itemsArray: [Item] {
-        //        return Array(items.filter("isDeleted == false"))
         return Array(items)
     }
     
@@ -59,12 +58,12 @@ class Item: Object {
 // MARK: Getters
 extension Realm {
     var groups: Results<Group> {
-        return objects(Group.self).filter("isDeleted == false").sorted(byKeyPath: "name")
-        //        return objects(Group.self).sorted(byKeyPath: "name")
+        //return objects(Group.self).filter("isDeleted == false").sorted(byKeyPath: "name")
+        return objects(Group.self).sorted(byKeyPath: "name")
     }
     var allGroups: Results<Group> {
+        //return objects(Group.self).sorted(byKeyPath: "name")
         return objects(Group.self).sorted(byKeyPath: "name")
-        //        return objects(Group.self).sorted(byKeyPath: "name")
     }
     func removeGroup(_ group: Group) {
         do {
