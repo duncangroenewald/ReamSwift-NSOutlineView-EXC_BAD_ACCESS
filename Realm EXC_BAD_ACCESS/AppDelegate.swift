@@ -15,10 +15,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     var masterViewController: MasterViewController!
 
-
-    func applicationDidFinishLaunching(aNotification: NSNotification) {
+    func applicationDidFinishLaunching(_ notification: Notification) {
         masterViewController = MasterViewController(nibName: "MasterViewController", bundle: nil)
-        masterViewController.setupSampleItems()
+        //masterViewController.setupSampleItems()
         
         window.contentView?.addSubview(masterViewController.view)
         masterViewController.view.frame = (window.contentView?.bounds)!

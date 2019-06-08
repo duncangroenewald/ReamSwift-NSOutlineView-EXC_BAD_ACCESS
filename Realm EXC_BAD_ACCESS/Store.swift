@@ -9,34 +9,76 @@
 import Foundation
 import RealmSwift
 
+class Group: Object {
+    @objc dynamic var name: String?
+    
+    var items = List<Item>()
+    
+    
+    override static func primaryKey() -> String? {
+        return "name"
+    }
+    
+    var itemsArray: [Item] {
+        return Array(items)
+    }
+    func addItem(_ name: String)->Bool{
+        do {
+            realm!.beginWrite()
+            let newItem = realm!.create(Item.self, value: ["name": name, "group": self], update: .modified)
+            items.append(newItem)
+            
+            try realm!.commitWrite()
+            return true
+            
+        } catch {
+            print("Error: \(error.localizedDescription)")
+            return false
+        }
+    }
+}
 class Item: Object {
-    dynamic var name: String?
-    dynamic var group: String?
+    @objc dynamic var name: String?
+    @objc dynamic var group: Group?
+    
+    override static func primaryKey() -> String? {
+        return "name"
+    }
 }
 
 // MARK: Getters
 extension Realm {
-    var items: Results<Item> {
-        return objects(Item.self)
+    var groups: Results<Group> {
+        return objects(Group.self).sorted(byKeyPath: "name")
+    }
+    func deleteAllItems() {
+        beginWrite()
+        deleteAll()
+        do {
+            try commitWrite()
+        } catch {
+            
+        }
     }
 }
 
 // MARK: Actions
 extension Realm {
-    func addItem(name: String, group: String) {
+    func addGroup(_ name: String)->Group?{
         do {
+            let group = Group()
+            group.name = name
             try write {
-                let item = Item()
-                item.name = name
-                item.group = group
-                add(item)
+                add(group)
             }
+            return group
         } catch {
-            print("Add Item action failed: \(error)")
+            print("Add Group action failed: \(error)")
+            return nil
         }
     }
     
-    func removeItem(item: Item) {
+    func removeItem(_ item: Item) {
         do {
             try write {
                 delete(item)

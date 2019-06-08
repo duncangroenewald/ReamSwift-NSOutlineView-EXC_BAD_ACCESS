@@ -9,7 +9,9 @@
 import Cocoa
 
 class MasterViewController: NSViewController {
-
+    
+    @IBOutlet weak var outlineView: NSOutlineView!
+    
     @IBOutlet weak private var sidebarOutlineView: NSOutlineView! {
         didSet {
             sidebarOutlineView.sizeLastColumnToFit()
@@ -19,104 +21,114 @@ class MasterViewController: NSViewController {
         }
     }
     
-    let sidebarSections = [
-        NSString(string: "Bad"),
-        NSString(string: "Good")
-    ]
-    
-    let badItems = store.items.filter("group = 'Bad'")
-    let goodItems = store.items.filter("group = 'Good'")
-    
-//    var badItemsArray: [Item] = []
-//    var goodItemsArray: [Item] = []
+    let sidebarSections = store.groups
     
     override func viewDidLoad() {
-//        badItemsArray = Array(badItems)
-//        goodItemsArray = Array(goodItems)
+        
+        //store.deleteAllItems()
+        
+        setupSampleItems()
+        
         
         super.viewDidLoad()
     }
     
-    func setupSampleItems() {
-        if (store.items.count == 0) {
-            store.addItem("Pizza", group: "Good")
-            store.addItem("Ice Cream", group: "Good")
-            store.addItem("Butts", group: "Good")
-            store.addItem("Puppies", group: "Good")
-            store.addItem("Spiders", group: "Bad")
-            store.addItem("Denim Fedoras", group: "Bad")
-            store.addItem("Boiled Eggs", group: "Bad")
-            store.addItem("Arthritis", group: "Bad")
+    @IBAction func deleteItem(_ sender: Any) {
+        
+        let row = self.outlineView.selectedRow
+        
+        guard row > -1 else {
+            return
         }
+        
+        if let item = self.outlineView.item(atRow: row) as? Item, let realm = item.realm {
+            
+            realm.beginWrite()
+            
+            realm.delete(item)
+            
+            do {
+                try realm.commitWrite()
+                
+                self.outlineView.reloadData()
+                
+            } catch {
+                print("Error!!")
+            }
+            
+        }
+    }
+    func setupSampleItems() {
+        
+        print("store.group.count: \(store.groups.count )")
+        
+        
+        if (store.groups.count == 0) {
+            if let groupBad = store.addGroup("Bad"), let groupGood = store.addGroup("Good") {
+                let _ = groupGood.addItem("Pizza")
+                let _ = groupGood.addItem("Ice Cream")
+                let _ = groupGood.addItem("Butts")
+                let _ = groupGood.addItem("Puppies")
+                let _ = groupBad.addItem("Spiders")
+                let _ = groupBad.addItem("Denim Fedoras")
+                let _ = groupBad.addItem("Boiled Eggs")
+                let _ = groupBad.addItem("Arthritis")
+            } else {
+                print("Error creating groups and items")
+            }
+        }
+        
+        print("store.group.count: \(store.groups.count )")
     }
     
 }
 
 // MARK: NSOutlineViewDataSource
 extension MasterViewController: NSOutlineViewDataSource {
-    func outlineView(outlineView: NSOutlineView, numberOfChildrenOfItem item: AnyObject?) -> Int {
+    func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
+        
         if (item == nil) {
             return sidebarSections.count
         }
         else {
-            let itemName = item as! String
-            
-            switch itemName {
-            case "Good":
-                return goodItems.count
-                
-            case "Bad":
-                return badItems.count
-                
-            default:
-                return 0
-                
+            if let group = item as? Group {
+                return group.items.count
             }
+            return 0
         }
     }
-    
-    func outlineView(outlineView: NSOutlineView, isItemExpandable item: AnyObject) -> Bool {
-        if (outlineView.parentForItem(item) == nil) {
+    func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
+        if (outlineView.parent(forItem: item) == nil) {
             return true
         }
         else {
             return false
         }
     }
-    
-    func outlineView(outlineView: NSOutlineView, child index: Int, ofItem item: AnyObject?) -> AnyObject {
+    func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
         if (item == nil) {
             return sidebarSections[index]
         }
         else {
-            let itemName = item as! String
-            
-            switch itemName {
-            case "Good":
-//                return goodItemsArray[index]
-                return goodItems[index]
+            if let group = item as? Group {
                 
-            case "Bad":
-//                return badItemsArray[index]
-                return badItems[index]
-                
-            default:
-                return 0
+                return group.items[index]
                 
             }
+            return 0
         }
     }
-    
-    func outlineView(outlineView: NSOutlineView, viewForTableColumn tableColumn: NSTableColumn?, item: AnyObject) -> NSView? {
+    func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
+        
         switch item {
-        case let title as String:
-            let cellView = outlineView.makeViewWithIdentifier("HeaderCell", owner: self) as! NSTableCellView
-            cellView.textField?.stringValue = title
+        case let group as Group:
+            let cellView = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "HeaderCell"), owner: self) as! NSTableCellView
+            cellView.textField?.stringValue = group.name ?? "-"
             return cellView
             
         case let anItem as Item:
-            let cellView = outlineView.makeViewWithIdentifier("DataCell", owner: self) as! NSTableCellView
-            cellView.textField?.stringValue = anItem.name!
+            let cellView = outlineView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(rawValue: "DataCell"), owner: self) as! NSTableCellView
+            cellView.textField?.stringValue = anItem.name ?? "-"
             return cellView
             
         default:
@@ -129,18 +141,17 @@ extension MasterViewController: NSOutlineViewDataSource {
 
 // MARK: NSOutlineViewDelegate
 extension MasterViewController: NSOutlineViewDelegate {
-    func outlineView(outlineView: NSOutlineView, isGroupItem item: AnyObject) -> Bool {
+    func outlineView(_ outlineView: NSOutlineView, isGroupItem item: Any) -> Bool {
         switch item {
-        case let title as String:
-            return sidebarSections.contains(title)
+        case _ as Group:
+            return true
         case _ as Item:
             return false
         default:
             return false
         }
     }
-    
-    func outlineView(outlineView: NSOutlineView, shouldShowOutlineCellForItem item: AnyObject) -> Bool {
+    func outlineView(_ outlineView: NSOutlineView, shouldShowOutlineCellForItem item: Any) -> Bool {
         return true
     }
 }
