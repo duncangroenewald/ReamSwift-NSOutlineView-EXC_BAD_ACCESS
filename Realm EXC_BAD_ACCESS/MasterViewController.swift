@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import RealmSwift
 
 class MasterViewController: NSViewController {
     
@@ -23,16 +24,41 @@ class MasterViewController: NSViewController {
     
     let sidebarSections = store.groups
     
+    var notificationToken: NotificationToken?
+    
+    var childNotificationTokens = [Group: NotificationToken]()
+    
+    var selectedItem: Any?
+    
     override func viewDidLoad() {
         
-        //store.deleteAllItems()
+        // Set up notifications for changes to the store.groups list (do we get notified about child updates??)
+//        notificationToken = sidebarSections.observe {changes in
+//                self.applyGroupChanges(changes: changes)
+//            }
+//
+//        for group in sidebarSections {
+//
+//            let notification = group.activeItems.observe {changes in
+//                self.applyChanges(changes: changes)
+//            }
+//            childNotificationTokens[group] = notification
+//
+//        }
+        
+//        store.deleteAllItems()
         
         setupSampleItems()
         
         
         super.viewDidLoad()
     }
-    
+    deinit {
+        notificationToken?.invalidate()
+        for (_, token) in childNotificationTokens {
+            token.invalidate()
+        }
+    }
     @IBAction func deleteItem(_ sender: Any) {
         
         let row = self.outlineView.selectedRow
@@ -41,7 +67,7 @@ class MasterViewController: NSViewController {
             return
         }
         
-        if let item = self.outlineView.item(atRow: row) as? Item, let realm = item.realm {
+        if let item = self.outlineView.item(atRow: row) as? Item, let realm = item.realm, let parent = item.group {
             
             realm.beginWrite()
             
@@ -51,12 +77,30 @@ class MasterViewController: NSViewController {
             do {
                 try realm.commitWrite()
                 
-                self.outlineView.reloadData()
+                self.outlineView?.removeItems(at: IndexSet(integer: row), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideUp)
                 
             } catch {
                 print("Error!!")
             }
             
+        }
+    }
+    /// Add an item to the current 'parent'
+    @IBAction func addItem(_ sender: Any) {
+        
+        let row = self.outlineView.selectedRow
+        
+        guard row > -1 else {
+            return
+        }
+        
+        if let item = self.outlineView.item(atRow: row) as? Item, let parent = item.group {
+            
+            if let item = parent.addItem("Item #\(parent.items.count)"), let index = parent.activeItems.index(of: item) {
+                
+                self.outlineView?.insertItems(at: IndexSet(integer: index), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideDown)
+                
+            }
         }
     }
     func setupSampleItems() {
@@ -158,5 +202,58 @@ extension MasterViewController: NSOutlineViewDelegate {
     }
     func outlineView(_ outlineView: NSOutlineView, shouldShowOutlineCellForItem item: Any) -> Bool {
         return true
+    }
+}
+
+extension MasterViewController {
+    func applyGroupChanges<T>(changes: RealmCollectionChange<T>) {
+        switch changes {
+        case .initial: self.outlineView?.reloadData()
+        case .update(_ , let deletions, let insertions, let updates):
+            
+            let fromRow = { (row: Int) in
+                return row }
+            
+            self.outlineView?.beginUpdates()
+            self.outlineView?.removeItems(at: IndexSet(deletions.map(fromRow)), inParent: nil, withAnimation: NSTableView.AnimationOptions.slideUp)
+            self.outlineView?.insertItems(at: IndexSet(insertions.map(fromRow)), inParent: nil, withAnimation: NSTableView.AnimationOptions.slideDown)
+            self.outlineView?.reloadData(forRowIndexes: IndexSet(updates.map(fromRow)), columnIndexes: IndexSet(integer: 0))
+            self.outlineView?.endUpdates()
+            
+            
+            // If inserted item then select it
+            if insertions.count > 0 {
+                let row = insertions[0]
+                self.outlineView?.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+                self.outlineView?.scrollRowToVisible(row)
+            }
+            
+        case .error(let error): fatalError("\(error)")
+        }
+    }
+    func applyChanges<T>(changes: RealmCollectionChange<T>) {
+        switch changes {
+        case .initial: self.outlineView?.reloadData()
+        case .update(_ , let deletions, let insertions, let updates):
+            
+            let fromRow = { (row: Int) in
+                return row }
+            
+            self.outlineView?.beginUpdates()
+            self.outlineView?.removeItems(at: IndexSet(deletions.map(fromRow)), inParent: nil, withAnimation: NSTableView.AnimationOptions.slideUp)
+            self.outlineView?.insertItems(at: IndexSet(insertions.map(fromRow)), inParent: nil, withAnimation: NSTableView.AnimationOptions.slideDown)
+            self.outlineView?.reloadData(forRowIndexes: IndexSet(updates.map(fromRow)), columnIndexes: IndexSet(integer: 0))
+            self.outlineView?.endUpdates()
+            
+            
+            // If inserted item then select it
+            if insertions.count > 0 {
+                let row = insertions[0]
+                self.outlineView?.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+                self.outlineView?.scrollRowToVisible(row)
+            }
+            
+        case .error(let error): fatalError("\(error)")
+        }
     }
 }

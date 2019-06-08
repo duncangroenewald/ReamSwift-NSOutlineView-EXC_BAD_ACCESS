@@ -123,19 +123,35 @@
                         <action selector="deleteItem:" target="-2" id="gxo-1E-8de"/>
                     </connections>
                 </button>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="c5R-ge-nZc">
+                    <rect key="frame" x="0.0" y="-1" width="13" height="21"/>
+                    <constraints>
+                        <constraint firstAttribute="width" constant="13" id="XUV-YL-Aae"/>
+                    </constraints>
+                    <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSAddTemplate" imagePosition="overlaps" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="PfU-wj-cjQ">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="addItem:" target="-2" id="5DR-J0-snw"/>
+                    </connections>
+                </button>
             </subviews>
             <constraints>
                 <constraint firstAttribute="bottom" secondItem="hIA-34-9tA" secondAttribute="bottom" id="EFP-xo-rLS"/>
                 <constraint firstItem="cBh-Y8-QwC" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="Hya-3o-ykh"/>
                 <constraint firstItem="cBh-Y8-QwC" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" id="jTk-4d-Kxa"/>
                 <constraint firstItem="hIA-34-9tA" firstAttribute="top" secondItem="cBh-Y8-QwC" secondAttribute="bottom" constant="1" id="ntO-jt-3Wd"/>
+                <constraint firstItem="c5R-ge-nZc" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="s2D-g7-rZH"/>
+                <constraint firstAttribute="bottom" secondItem="c5R-ge-nZc" secondAttribute="bottom" id="vyl-6a-0Xa"/>
                 <constraint firstItem="hIA-34-9tA" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" constant="20" id="y1G-VD-nsM"/>
             </constraints>
-            <point key="canvasLocation" x="140" y="275"/>
+            <point key="canvasLocation" x="145" y="273"/>
         </customView>
     </objects>
     <resources>
         <image name="NSActionTemplate" width="14" height="14"/>
+        <image name="NSAddTemplate" width="11" height="11"/>
         <image name="NSRemoveTemplate" width="11" height="11"/>
     </resources>
 </document>

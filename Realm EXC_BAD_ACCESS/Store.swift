@@ -31,18 +31,18 @@ class Group: Object {
         return Array(items)
     }
     
-    func addItem(_ name: String)->Bool{
+    func addItem(_ name: String)->Item?{
         do {
             realm!.beginWrite()
             let newItem = realm!.create(Item.self, value: ["name": name, "group": self], update: .modified)
             items.append(newItem)
             
             try realm!.commitWrite()
-            return true
+            return newItem
             
         } catch {
             print("Error: \(error.localizedDescription)")
-            return false
+            return nil
         }
     }
 }
