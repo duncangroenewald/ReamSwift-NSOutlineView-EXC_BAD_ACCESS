@@ -33,18 +33,18 @@ class MasterViewController: NSViewController {
     override func viewDidLoad() {
         
         // Set up notifications for changes to the store.groups list (do we get notified about child updates??)
-//        notificationToken = sidebarSections.observe {changes in
-//                self.applyGroupChanges(changes: changes)
-//            }
-//
-//        for group in sidebarSections {
-//
-//            let notification = group.activeItems.observe {changes in
-//                self.applyChanges(changes: changes)
-//            }
-//            childNotificationTokens[group] = notification
-//
-//        }
+        notificationToken = sidebarSections.observe {changes in
+                self.applyGroupChanges(changes: changes)
+            }
+
+        for group in sidebarSections {
+
+            let notification = group.activeItems.observe {changes in
+                self.applyChanges(group: group, changes: changes)
+            }
+            childNotificationTokens[group] = notification
+
+        }
         
 //        store.deleteAllItems()
         
@@ -77,7 +77,7 @@ class MasterViewController: NSViewController {
             do {
                 try realm.commitWrite()
                 
-                self.outlineView?.removeItems(at: IndexSet(integer: row), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideUp)
+               // self.outlineView?.removeItems(at: IndexSet(integer: row), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideUp)
                 
             } catch {
                 print("Error!!")
@@ -93,12 +93,11 @@ class MasterViewController: NSViewController {
         guard row > -1 else {
             return
         }
-        
         if let item = self.outlineView.item(atRow: row) as? Item, let parent = item.group {
             
             if let item = parent.addItem("Item #\(parent.items.count)"), let index = parent.activeItems.index(of: item) {
                 
-                self.outlineView?.insertItems(at: IndexSet(integer: index), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideDown)
+//                self.outlineView?.insertItems(at: IndexSet(integer: index), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideDown)
                 
             }
         }
@@ -231,7 +230,11 @@ extension MasterViewController {
         case .error(let error): fatalError("\(error)")
         }
     }
-    func applyChanges<T>(changes: RealmCollectionChange<T>) {
+    func applyChanges<T>(group: Group, changes: RealmCollectionChange<T>) {
+        
+        let parent = group
+        let parentRow = self.outlineView.row(forItem: parent)
+        
         switch changes {
         case .initial: self.outlineView?.reloadData()
         case .update(_ , let deletions, let insertions, let updates):
@@ -240,15 +243,15 @@ extension MasterViewController {
                 return row }
             
             self.outlineView?.beginUpdates()
-            self.outlineView?.removeItems(at: IndexSet(deletions.map(fromRow)), inParent: nil, withAnimation: NSTableView.AnimationOptions.slideUp)
-            self.outlineView?.insertItems(at: IndexSet(insertions.map(fromRow)), inParent: nil, withAnimation: NSTableView.AnimationOptions.slideDown)
-            self.outlineView?.reloadData(forRowIndexes: IndexSet(updates.map(fromRow)), columnIndexes: IndexSet(integer: 0))
+            self.outlineView?.removeItems(at: IndexSet(deletions.map(fromRow)), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideUp)
+            self.outlineView?.insertItems(at: IndexSet(insertions.map(fromRow)), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideDown)
+            self.outlineView?.reloadData(forRowIndexes: IndexSet(updates.map({fromRow in fromRow + parentRow})), columnIndexes: IndexSet(integer: 0))
             self.outlineView?.endUpdates()
-            
             
             // If inserted item then select it
             if insertions.count > 0 {
-                let row = insertions[0]
+                let item = group.activeItems[insertions[0]]
+                let row = self.outlineView.row(forItem: item)
                 self.outlineView?.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
                 self.outlineView?.scrollRowToVisible(row)
             }
