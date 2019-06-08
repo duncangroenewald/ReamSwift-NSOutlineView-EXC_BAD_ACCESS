@@ -11,6 +11,7 @@ import RealmSwift
 
 class Group: Object {
     @objc dynamic var name: String?
+    @objc dynamic var isDeleted = false   // Instead of deleting the object just mark it for deletion
     
     var items = List<Item>()
     
@@ -18,9 +19,11 @@ class Group: Object {
     override static func primaryKey() -> String? {
         return "name"
     }
-    
+    var activeItems: Results<Item> {
+        return items.filter("isDeleted == false")
+    }
     var itemsArray: [Item] {
-        return Array(items)
+        return Array(items.filter("isDeleted == false"))
     }
     func addItem(_ name: String)->Bool{
         do {
@@ -40,6 +43,7 @@ class Group: Object {
 class Item: Object {
     @objc dynamic var name: String?
     @objc dynamic var group: Group?
+    @objc dynamic var isDeleted = false
     
     override static func primaryKey() -> String? {
         return "name"
@@ -49,7 +53,16 @@ class Item: Object {
 // MARK: Getters
 extension Realm {
     var groups: Results<Group> {
-        return objects(Group.self).sorted(byKeyPath: "name")
+        return objects(Group.self).filter("isDeleted == false").sorted(byKeyPath: "name")
+    }
+    func removeGroup(_ group: Group) {
+        do {
+            try write {
+                group.isDeleted = true
+            }
+        } catch {
+            print("Delete Group action failed: \(error)")
+        }
     }
     func deleteAllItems() {
         beginWrite()
@@ -81,7 +94,7 @@ extension Realm {
     func removeItem(_ item: Item) {
         do {
             try write {
-                delete(item)
+                item.isDeleted = true
             }
         } catch {
             print("Delete Item action failed: \(error)")

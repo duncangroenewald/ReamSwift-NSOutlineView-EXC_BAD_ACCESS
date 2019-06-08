@@ -45,7 +45,7 @@ class MasterViewController: NSViewController {
             
             realm.beginWrite()
             
-            realm.delete(item)
+            item.isDeleted = true
             
             do {
                 try realm.commitWrite()
@@ -92,7 +92,7 @@ extension MasterViewController: NSOutlineViewDataSource {
         }
         else {
             if let group = item as? Group {
-                return group.items.count
+                return group.activeItems.count
             }
             return 0
         }
@@ -112,7 +112,7 @@ extension MasterViewController: NSOutlineViewDataSource {
         else {
             if let group = item as? Group {
                 
-                return group.items[index]
+                return group.activeItems[index]
                 
             }
             return 0
