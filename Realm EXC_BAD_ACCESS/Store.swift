@@ -27,7 +27,7 @@ class Group: Object {
     
     /// This still crashes if object is deleted by Realm
     var itemsArray: [Item] {
-//        return Array(items.filter("isDeleted == false"))
+        //        return Array(items.filter("isDeleted == false"))
         return Array(items)
     }
     
@@ -60,13 +60,17 @@ class Item: Object {
 extension Realm {
     var groups: Results<Group> {
         return objects(Group.self).filter("isDeleted == false").sorted(byKeyPath: "name")
-//        return objects(Group.self).sorted(byKeyPath: "name")
+        //        return objects(Group.self).sorted(byKeyPath: "name")
+    }
+    var allGroups: Results<Group> {
+        return objects(Group.self).sorted(byKeyPath: "name")
+        //        return objects(Group.self).sorted(byKeyPath: "name")
     }
     func removeGroup(_ group: Group) {
         do {
             try write {
                 
-//                delete(group)
+                //                delete(group)
                 group.isDeleted = true
             }
         } catch {
@@ -87,12 +91,19 @@ extension Realm {
 // MARK: Actions
 extension Realm {
     func addGroup(_ name: String)->Group?{
-        do {
-            let group = Group()
-            group.name = name
-            try write {
-                add(group)
-            }
+        
+        beginWrite()
+        
+        let group = Group()
+        group.name = name
+        
+        
+         do {
+            
+            add(group, update: .modified)
+       
+            try commitWrite()
+            
             return group
         } catch {
             print("Add Group action failed: \(error)")
@@ -104,7 +115,7 @@ extension Realm {
         do {
             try write {
                 item.isDeleted = true
-//                delete(item)
+                //                delete(item)
             }
         } catch {
             print("Delete Item action failed: \(error)")

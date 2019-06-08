@@ -136,10 +136,22 @@
                         <action selector="addItem:" target="-2" id="5DR-J0-snw"/>
                     </connections>
                 </button>
+                <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="LZY-Xq-tMO">
+                    <rect key="frame" x="198" y="-1" width="13" height="21"/>
+                    <buttonCell key="cell" type="smallSquare" bezelStyle="smallSquare" image="NSAddTemplate" imagePosition="overlaps" alignment="center" lineBreakMode="truncatingTail" state="on" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="PrF-64-4kh">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                        <font key="font" metaFont="system"/>
+                    </buttonCell>
+                    <connections>
+                        <action selector="updates:" target="-2" id="haU-l8-9PF"/>
+                    </connections>
+                </button>
             </subviews>
             <constraints>
                 <constraint firstAttribute="bottom" secondItem="hIA-34-9tA" secondAttribute="bottom" id="EFP-xo-rLS"/>
                 <constraint firstItem="cBh-Y8-QwC" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="Hya-3o-ykh"/>
+                <constraint firstItem="LZY-Xq-tMO" firstAttribute="leading" secondItem="hIA-34-9tA" secondAttribute="trailing" constant="165" id="LVp-GH-FYj"/>
+                <constraint firstAttribute="bottom" secondItem="LZY-Xq-tMO" secondAttribute="bottom" id="QdD-J9-zws"/>
                 <constraint firstItem="cBh-Y8-QwC" firstAttribute="top" secondItem="Hz6-mo-xeY" secondAttribute="top" id="jTk-4d-Kxa"/>
                 <constraint firstItem="hIA-34-9tA" firstAttribute="top" secondItem="cBh-Y8-QwC" secondAttribute="bottom" constant="1" id="ntO-jt-3Wd"/>
                 <constraint firstItem="c5R-ge-nZc" firstAttribute="leading" secondItem="Hz6-mo-xeY" secondAttribute="leading" id="s2D-g7-rZH"/>

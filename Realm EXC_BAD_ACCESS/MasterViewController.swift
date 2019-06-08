@@ -34,19 +34,19 @@ class MasterViewController: NSViewController {
         
         // Set up notifications for changes to the store.groups list (do we get notified about child updates??)
         notificationToken = sidebarSections.observe {changes in
-                self.applyGroupChanges(changes: changes)
-            }
-
+            self.applyGroupChanges(changes: changes)
+        }
+        
         for group in sidebarSections {
-
+            
             let notification = group.activeItems.observe {changes in
                 self.applyChanges(group: group, changes: changes)
             }
             childNotificationTokens[group] = notification
-
+            
         }
         
-//        store.deleteAllItems()
+        //        store.deleteAllItems()
         
         setupSampleItems()
         
@@ -67,22 +67,41 @@ class MasterViewController: NSViewController {
             return
         }
         
-        if let item = self.outlineView.item(atRow: row) as? Item, let realm = item.realm, let parent = item.group {
+        if let item = self.outlineView.item(atRow: row) as? Item, let realm = item.realm {
+            
+            print("Deleting \(item.name)")
             
             realm.beginWrite()
             
             item.isDeleted = true
-//            realm.delete(item)
+            //            realm.delete(item)
             
             do {
                 try realm.commitWrite()
                 
-               // self.outlineView?.removeItems(at: IndexSet(integer: row), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideUp)
+                // self.outlineView?.removeItems(at: IndexSet(integer: row), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideUp)
                 
             } catch {
                 print("Error!!")
             }
+        } else if let item = self.outlineView.item(atRow: row) as? Group, let realm = item.realm {
             
+            print("Deleting \(item.name)")
+            
+            realm.beginWrite()
+            
+            item.isDeleted = true
+            
+            do {
+                try realm.commitWrite()
+                
+                // Remove the notification
+                self.childNotificationTokens[item]?.invalidate()
+                self.childNotificationTokens[item] = nil
+                
+            } catch {
+                print("Error!!")
+            }
         }
     }
     /// Add an item to the current 'parent'
@@ -97,15 +116,66 @@ class MasterViewController: NSViewController {
             
             if let item = parent.addItem("Item #\(parent.items.count)"), let index = parent.activeItems.index(of: item) {
                 
-//                self.outlineView?.insertItems(at: IndexSet(integer: index), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideDown)
+                //                self.outlineView?.insertItems(at: IndexSet(integer: index), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideDown)
                 
             }
+        }
+    }
+    @IBAction func updates(_ sender: Any) {
+        
+        // perform some updates in the background
+        // and what them appear in the outlineView
+        DispatchQueue.global().async {
+            
+            let realm = try! Realm()
+            
+            for _ in 1...5 {
+                
+                let next = realm.allGroups.count + 1
+                
+                // Add a group
+                if let group = realm.addGroup("Group \(next)") {
+                    
+//                    let _ = group.addItem("James")
+//                    let _ = group.addItem("Peter")
+//                    let _ = group.addItem("Pumpkin")
+//                    let _ = group.addItem("Eater")
+//                    
+//                    if let name = group.name {
+//                        Thread.sleep(forTimeInterval: 2)
+//                        DispatchQueue.main.async {
+//                            self.expandGroup(name: name)
+//                        }
+//                    }
+                }
+            }
+//            let groups = realm.objects(Group.self)
+//
+//            for group in groups {
+//
+//                if group.items.count > 2 {
+//                    let item = group.items[1]
+//
+//                    do {
+//                        try realm.write {
+//                            item.isDeleted = true
+//                        }
+//                    } catch {
+//                        print("Error: \(error.localizedDescription)")
+//                    }
+//                }
+//            }
+        }
+    }
+    /// Pass Id so we can access from another thread
+    func expandGroup(name: String){
+        if let group = store.groups.first(where: {group in group.name == name}) {
+            self.outlineView.expandItem(group, expandChildren: true)
         }
     }
     func setupSampleItems() {
         
         print("store.group.count: \(store.groups.count )")
-        
         
         if (store.groups.count == 0) {
             if let groupBad = store.addGroup("Bad"), let groupGood = store.addGroup("Good") {
@@ -136,8 +206,8 @@ extension MasterViewController: NSOutlineViewDataSource {
         }
         else {
             if let group = item as? Group {
-//                return group.items.count
-//                return group.itemsArray.count
+                //                return group.items.count
+                //                return group.itemsArray.count
                 return group.activeItems.count
             }
             return 0
@@ -158,8 +228,8 @@ extension MasterViewController: NSOutlineViewDataSource {
         else {
             if let group = item as? Group {
                 
-//                return group.items[index]
-//                return group.itemsArray[index]
+                //                return group.items[index]
+                //                return group.itemsArray[index]
                 return group.activeItems[index]
                 
             }
@@ -212,12 +282,31 @@ extension MasterViewController {
             
             let fromRow = { (row: Int) in
                 return row }
+            print(" ")
+            print("deletions: \(deletions)")
+            print("insertions: \(insertions)")
+            print("updates: \(updates)")
+            // Translate the updates to rows for the items
+            let updateRows = updates.map({(row: Int) -> Int in
+                
+                let group = self.sidebarSections[row]
+                let groupRow = self.outlineView.row(forItem: group)
+                return groupRow
+                
+            })
             
             self.outlineView?.beginUpdates()
             self.outlineView?.removeItems(at: IndexSet(deletions.map(fromRow)), inParent: nil, withAnimation: NSTableView.AnimationOptions.slideUp)
             self.outlineView?.insertItems(at: IndexSet(insertions.map(fromRow)), inParent: nil, withAnimation: NSTableView.AnimationOptions.slideDown)
-            self.outlineView?.reloadData(forRowIndexes: IndexSet(updates.map(fromRow)), columnIndexes: IndexSet(integer: 0))
+            self.outlineView?.reloadData(forRowIndexes: IndexSet(updateRows), columnIndexes: IndexSet(integer: 0))
             self.outlineView?.endUpdates()
+            
+            for index in insertions {
+                let group = self.sidebarSections[index]
+                self.childNotificationTokens[group] = group.activeItems.observe {changes in
+                    self.applyChanges(group: group, changes: changes)
+                }
+            }
             
             
             // If inserted item then select it
@@ -245,7 +334,7 @@ extension MasterViewController {
             self.outlineView?.beginUpdates()
             self.outlineView?.removeItems(at: IndexSet(deletions.map(fromRow)), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideUp)
             self.outlineView?.insertItems(at: IndexSet(insertions.map(fromRow)), inParent: parent, withAnimation: NSTableView.AnimationOptions.slideDown)
-            self.outlineView?.reloadData(forRowIndexes: IndexSet(updates.map({fromRow in fromRow + parentRow})), columnIndexes: IndexSet(integer: 0))
+            self.outlineView?.reloadData(forRowIndexes: IndexSet(updates.map({row in return row + parentRow})), columnIndexes: IndexSet(integer: 0))
             self.outlineView?.endUpdates()
             
             // If inserted item then select it
